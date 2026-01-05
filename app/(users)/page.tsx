@@ -204,7 +204,7 @@ const Home = () => {
                   onClick={() => router.push("/showcase")}
                   className="bg-[#559863] text-white px-6 py-3 rounded-md font-medium shadow hover:bg-green-700 transition"
                 >
-                  View Showcase
+                   Showcase
                 </button>
     </div>
   </div>
