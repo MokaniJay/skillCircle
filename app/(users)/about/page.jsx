@@ -1,6 +1,6 @@
 const about =() => {
     return (
-        <h1>About Page</h1>
+        <h1>whos   Page</h1>
   
     );
   };
