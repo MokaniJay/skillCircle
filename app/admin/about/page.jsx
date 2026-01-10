@@ -1,8 +1,11 @@
-const about =() => {
-    return (
-        <h1> Admin  About Page</h1>
-  
-    );
-  };
-  
-  export default about;
+import React from "react";
+
+const AboutUs = () => {
+  return (
+   <div>
+      <h1>About Us - Admin Section</h1>
+   </div>
+  );
+};
+
+export default AboutUs;

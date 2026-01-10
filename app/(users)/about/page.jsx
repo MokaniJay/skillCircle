@@ -3,18 +3,21 @@ import React from "react";
 const AboutUs = () => {
   return (
     <div className="bg-gray-50 min-h-screen">
-     <section 
-  className="w-full h-screen bg-cover bg-center relative" 
-  style={{ backgroundImage: 'linear-gradient(to right, #4caf50, #8bc34a)' }}>
-
+      {/* Hero Section with Full Width and Height */}
+          <section
+  className="h-screen bg-cover bg-center relative ml-4 mr-4 sm:ml-2 sm:mr-2"
+  style={{
+    backgroundImage: 'linear-gradient(to right, #16a34a, #15803d)', // Using your primary green colors
+  }}
+>
   {/* Overlay for text to appear on top of the background gradient */}
   <div className="absolute inset-0 bg-black opacity-50"></div>
 
-  <div className="relative z-10 text-center text-white py-16">
-    <h1 className="text-4xl font-bold mb-4">
+  <div className="relative z-10 text-center text-white py-16 px-4 sm:px-8 md:px-16">
+    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
       Welcome to <span className="text-yellow-300">SkillCircle</span>
     </h1>
-    <p className="text-lg mb-6">
+    <p className="text-lg sm:text-xl mb-6">
       SkillCircle is a skill-based collaboration platform connecting learners, creators, and professionals. Build projects, find mentors, and grow together.
     </p>
     <button className="bg-yellow-300 text-gray-800 py-2 px-6 rounded-lg font-semibold hover:bg-yellow-400">
@@ -23,8 +26,7 @@ const AboutUs = () => {
   </div>
 </section>
 
-
-      {/* Our Story Section */}
+      {/* Other Sections */}
       <section className="py-16 px-4 text-center">
         <h2 className="text-2xl font-bold mb-4">Our Story</h2>
         <p className="text-lg max-w-3xl mx-auto text-gray-700">
