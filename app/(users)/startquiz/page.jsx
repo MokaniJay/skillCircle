@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 
 export default function SkillCircleQuiz() {
+
+  const isValidEmail = (email) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
   const quizSteps = [
     {
       type: "input",
@@ -47,6 +51,7 @@ export default function SkillCircleQuiz() {
   const [answers, setAnswers] = useState({});
   const [completed, setCompleted] = useState(false);
   const [matches, setMatches] = useState([]);
+const [loading, setLoading] = useState(false);
 
   const current = quizSteps[step];
 
@@ -72,74 +77,140 @@ export default function SkillCircleQuiz() {
       ? currentAnswer.length > 0
       : currentAnswer;
 
-  const handleNext = () => {
-    if (!canProceed) return;
+const handleNext = () => {
+  if (!canProceed) return;
 
-    if (step + 1 < quizSteps.length) {
-      setStep(step + 1);
-    } else {
-      setCompleted(true);
+  if (step === 0) {
+    const name = answers["Your Full Name"]?.trim();
+
+    if (!name || name.length < 2) {
+      alert("Please enter a valid name");
+      return;
     }
-  };
+  }
+
+  if (step === 1) {
+    const email = answers["Your Email"]?.trim().toLowerCase();
+
+    if (!isValidEmail(email)) {
+      alert("Please enter a valid email address");
+      return;
+    }
+
+    setAnswers((prev) => ({
+      ...prev,
+      ["Your Email"]: email,
+    }));
+  }
+
+  if (step + 1 < quizSteps.length) {
+    setStep(step + 1);
+  } else {
+    setCompleted(true);
+  }
+};
 
   const handlePrev = () => {
     if (step > 0) setStep(step - 1);
   };
 
-  useEffect(() => {
-    const processQuiz = async () => {
-      if (!completed) return;
+useEffect(() => {
+  const processQuiz = async () => {
+    if (!completed) return;
 
-      try {
-        // Save user to Neon DB
-        await fetch("/api/users", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: answers["Your Full Name"],
-            email: answers["Your Email"],
-            primarySkill: answers["What is your primary skill?"],
-            lookingForSkills:
-              answers["Which skills are you looking for in collaborators?"],
-          }),
-        });
+    setLoading(true);
 
-        // Get all users from DB
-        const res = await fetch("/api/users");
-        const users = await res.json();
+    try {
+      const payload = {
+        name: answers["Your Full Name"]?.trim(),
+        email: answers["Your Email"]?.trim().toLowerCase(),
+        primarySkill: answers["What is your primary skill?"],
+        lookingForSkills:
+          answers["Which skills are you looking for in collaborators?"],
+      };
 
-        const lookingFor =
-          answers["Which skills are you looking for in collaborators?"] || [];
+      const saveRes = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-        const foundMatches = users
-          .filter((user) => user.email !== answers["Your Email"])
-          .map((user) => {
-            return lookingFor.includes(user.primarySkill)
-              ? {
-                  ...user,
-                  matchedSkill: user.primarySkill,
-                }
-              : null;
-          })
-          .filter(Boolean);
-
-        setMatches(foundMatches);
-      } catch (error) {
-        console.error("Error:", error);
+      if (!saveRes.ok) {
+        const errorData = await saveRes.json();
+        throw new Error(errorData.error || "Failed to save user");
       }
-    };
 
-    processQuiz();
-  }, [completed, answers]);
+      const res = await fetch("/api/users");
 
-  const resetQuiz = () => {
-    setStep(0);
-    setAnswers({});
-    setCompleted(false);
-    setMatches([]);
+      if (!res.ok) {
+        throw new Error("Failed to fetch users");
+      }
+
+      const users = await res.json();
+
+      const mySkill =
+        answers["What is your primary skill?"];
+
+      const lookingFor =
+        answers["Which skills are you looking for in collaborators?"] || [];
+
+      const foundMatches = users
+        .filter(
+          (user) =>
+            user.email.toLowerCase() !==
+            answers["Your Email"]?.toLowerCase()
+        )
+        .map((user) => {
+          const iNeedUser =
+            lookingFor.includes(user.primarySkill);
+
+          const userNeedsMe =
+            user.lookingForSkills?.includes(mySkill);
+
+          if (iNeedUser && userNeedsMe) {
+            return {
+              ...user,
+              matchedSkill: user.primarySkill,
+              matchType: "Perfect Match ⭐",
+              score: 2,
+            };
+          }
+
+          if (iNeedUser) {
+            return {
+              ...user,
+              matchedSkill: user.primarySkill,
+              matchType: "Skill Match",
+              score: 1,
+            };
+          }
+
+          return null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.score - a.score);
+
+      setMatches(foundMatches);
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  processQuiz();
+}, [completed]);
+
+ const resetQuiz = () => {
+  setStep(0);
+  setAnswers({});
+  setCompleted(false);
+  setMatches([]);
+  setLoading(false);
+};
 
   const generateEmailLink = (user) => {
     const subject = encodeURIComponent(
@@ -188,7 +259,7 @@ Best regards`
             {current.type === "input" ? (
               <input
                 className="w-full border rounded-lg px-4 py-3"
-                value={currentAnswer}
+              value={currentAnswer || ""}
                 placeholder={current.placeholder}
                 onChange={(e) =>
                   setAnswers((prev) => ({
@@ -232,12 +303,16 @@ Best regards`
 
               <button
                 onClick={handleNext}
-                disabled={!canProceed}
+              disabled={!canProceed || loading}
                 className="w-1/2 bg-green-600 text-white py-3 rounded-lg disabled:opacity-40"
               >
-                {step + 1 === quizSteps.length
-                  ? "Finish"
-                  : "Next"}
+               {
+  loading
+    ? "Saving..."
+    : step + 1 === quizSteps.length
+    ? "Finish"
+    : "Next"
+}
               </button>
             </div>
           </>
@@ -262,17 +337,27 @@ Best regards`
                       {u.name}
                     </h3>
 
-                    <p>
-                      <strong>Primary Skill:</strong>{" "}
-                      {u.primarySkill}
-                    </p>
+                <p>
+  <strong>Primary Skill:</strong>{" "}
+  {u.primarySkill}
+</p>
 
-                    <p className="text-green-700 mt-2">
-                      Matched Skill: {u.matchedSkill}
-                    </p>
+<p className="text-green-700 mt-2">
+  Matched Skill: {u.matchedSkill}
+</p>
 
-                    <a
-                      href={generateEmailLink(u)}
+<p
+  className={`font-semibold mt-2 ${
+    u.matchType === "Perfect Match ⭐"
+      ? "text-green-700"
+      : "text-blue-600"
+  }`}
+>
+  {u.matchType}
+</p>
+
+<a
+  href={generateEmailLink(u)}
                       className="mt-4 inline-block w-full text-center bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
                     >
                       Contact via Email
