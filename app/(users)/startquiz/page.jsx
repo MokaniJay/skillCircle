@@ -103,11 +103,12 @@ const handleNext = () => {
     }));
   }
 
-  if (step + 1 < quizSteps.length) {
-    setStep(step + 1);
-  } else {
-    setCompleted(true);
-  }
+ if (step + 1 < quizSteps.length) {
+  setStep(step + 1);
+} else {
+  setLoading(true);
+  setCompleted(true);
+}
 };
 
   const handlePrev = () => {
@@ -232,8 +233,20 @@ Best regards`
 
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center px-4 py-10">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow p-6 md:p-10">
-        {!completed ? (
+    <div className="w-full max-w-2xl bg-white rounded-2xl shadow p-6 md:p-10">
+  {loading ? (
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-green-600"></div>
+
+      <h2 className="text-2xl font-bold mt-6">
+        Finding Your Matches...
+      </h2>
+
+      <p className="text-gray-500 mt-2 text-center">
+        Saving your profile and searching for the best collaborators.
+      </p>
+    </div>
+  ) : !completed ? (
           <>
             <h1 className="text-xl font-semibold mb-2">
               <span className="text-green-600">SkillCircle</span> Skill Match Quiz
